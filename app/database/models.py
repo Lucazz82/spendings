@@ -12,7 +12,7 @@ class Spending(db.Model):
     category = db.Column(db.String(40), nullable=False)
     instalments = db.Column(db.Integer, nullable=False, default=1)
     date = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now()) # Datetime from JS. Change the default when JS will implemented
-    userId = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     def to_json(self):
         return {
@@ -25,6 +25,12 @@ class Spending(db.Model):
         }
 
 
+    def update(self, data):
+        for key, value in data.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+
+
 class User(db.Model):
     __tablename__= 'users'
     id = db.Column(db.Integer, primary_key=True, nullable=False)
@@ -32,6 +38,14 @@ class User(db.Model):
     email = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(102), nullable=False)
     spendings = db.relationship('Spending', backref='user', lazy=True)
+
+
+    # Create exceptions for missing arguments
+    def create_user(self, username, email, password):
+        self.username = username
+        self.email = email
+        self.password = password
+        self.hash_password()
 
 
     def to_json(self):

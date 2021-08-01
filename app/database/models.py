@@ -48,6 +48,7 @@ class User(db.Model):
         self.hash_password()
 
 
+
     def to_json(self):
         return {
             'id': self.id,

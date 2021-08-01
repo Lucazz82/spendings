@@ -1,13 +1,13 @@
-from flask import request, jsonify, Response
+from flask import request, jsonify, Response, make_response
 from flask_restful import Resource
 from database.models import db, Spending
+from flask_jwt_extended import jwt_required
 
 class SpendingApi(Resource):
     def get(self, user_id, spending_id):
         spending = Spending.query.filter_by(id = spending_id, user_id=user_id).first()
 
-        # Should put , 200 for response code but Exception raised
-        return jsonify(spending.to_json())
+        return make_response(jsonify(spending.to_json()), 200)
 
     # Update spending
     def put(self, user_id, spending_id):
@@ -34,15 +34,15 @@ class SpendingApi(Resource):
 
 class SpendingsApi(Resource):
     # Retrive all spendings from user
+    @jwt_required()
     def get(self, user_id):
-        spendings = Spending.query.filter_by(userId=user_id)
+        spendings = Spending.query.filter_by(user_id=user_id)
         response = []
 
         for spending in spendings:
             response.append(spending.to_json())
 
-        # Should put , 200 for response code but Exception raised
-        return jsonify(response)
+        return make_response(jsonify(response), 200)
     
     # Add spending
     def post(self, user_id):

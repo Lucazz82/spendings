@@ -27,18 +27,7 @@ class UserApi(Resource):
 
         return 'success', 204
 
-
+# Move create a user to autentication file
 class UsersApi(Resource):
-    # Create a user
-    def post(self):
-        body = request.get_json()
-        # user = User(username=body['username'], hash=generate_password_hash(body['password']))
-        # user = User(**body)
-        # user.hash_password()
-        user = User()
-        user.create_user(**body)
-
-        db.session.add(user)
-        db.session.commit()
-        return {'id': user.id}, 201
+    pass
 

@@ -66,6 +66,7 @@ class User(db.Model):
                 self.hash_password()
 
 
+
     def hash_password(self):
         self.password = generate_password_hash(self.password)
 

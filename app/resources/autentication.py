@@ -6,17 +6,17 @@ from flask_jwt_extended import create_access_token
 class LoginApi(Resource):
     def post(self):
         body = request.get_json()
-        user = User.query.filter_by(username=body['username']).first()
+        user = User.query.filter_by(username=body['username']).one_or_none()
 
         if user is None:
-            return make_response(jsonify({'msg': 'invalid username or password'}), 400)
+            return make_response(jsonify({'msg': 'invalid username or password'}), 401)
 
         if not user.check_password(body['password']):
-            return make_response(jsonify({'msg': 'invalid username or password'}), 400)
+            return make_response(jsonify({'msg': 'invalid username or password'}), 401)
 
         token = create_access_token(identity=user.id)
 
-        return make_response(jsonify(token), 200)
+        return make_response(jsonify(token=token, id=user.id), 200)
 
 
 class RegisterApi(Resource):

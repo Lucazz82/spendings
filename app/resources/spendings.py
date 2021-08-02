@@ -10,7 +10,7 @@ class SpendingApi(Resource):
         if user_id != token_id: 
             return make_response({'msg': 'invalid credentials'}, 401)
 
-        spending = Spending.query.filter_by(id = spending_id, user_id=user_id).first()
+        spending = Spending.query.filter_by(id = spending_id, user_id=user_id).one_or_none()
 
         return make_response(jsonify(spending.to_json()), 200)
 
@@ -23,7 +23,7 @@ class SpendingApi(Resource):
         if user_id != token_id: 
             return make_response({'msg': 'invalid credentials'}, 401)
 
-        spending = Spending.query.filter_by(id=spending_id, user_id=user_id).first()
+        spending = Spending.query.filter_by(id=spending_id, user_id=user_id).one_or_none()
 
         spending.update(body)
 
@@ -39,8 +39,8 @@ class SpendingApi(Resource):
         token_id = get_jwt_identity()
         if user_id != token_id: 
             return make_response({'msg': 'invalid credentials'}, 401)
-            
-        spending = Spending.query.filter_by(id=spending_id, user_id=user_id).first()
+
+        spending = Spending.query.filter_by(id=spending_id, user_id=user_id).one_or_none()
 
         db.session.delete(spending)
         db.session.commit()

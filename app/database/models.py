@@ -1,6 +1,7 @@
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql import func
+from resources.errors import EmailAlreadyExists, PasswordTooShort, SchemaValidationError, UsernameAlreadyExists
 
 db = SQLAlchemy()
 
@@ -41,9 +42,20 @@ class User(db.Model):
 
 
     # Create exceptions for missing arguments
-    def create_user(self, username, email, password):
+    def __init__(self, username, email, password):
+        if User.query.filter_by(username=username).count() != 0:
+            raise UsernameAlreadyExists
+
         self.username = username
+
+        if User.query.filter_by(email=email).count() != 0:
+            raise EmailAlreadyExists
+
         self.email = email
+
+        if len(password) < 8:
+            raise PasswordTooShort
+            
         self.password = password
         self.hash_password()
 

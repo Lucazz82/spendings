@@ -2,6 +2,7 @@ from flask_restful import Resource
 from flask import request, jsonify, make_response
 from database.models import db, User
 from flask_jwt_extended import create_access_token
+from .errors import UsernameAlreadyExists
 
 class LoginApi(Resource):
     def post(self):
@@ -22,13 +23,12 @@ class LoginApi(Resource):
 class RegisterApi(Resource):
     # Create a user
     def post(self):
-        body = request.get_json()
-        # user = User(username=body['username'], hash=generate_password_hash(body['password']))
-        # user = User(**body)
-        # user.hash_password()
-        user = User()
-        user.create_user(**body)
+        try:
+            body = request.get_json()
+            user = User(**body)
 
-        db.session.add(user)
-        db.session.commit()
-        return {'id': user.id}, 201
+            db.session.add(user)
+            db.session.commit()
+            return {'id': user.id}, 201
+        except Exception as e:
+            raise e

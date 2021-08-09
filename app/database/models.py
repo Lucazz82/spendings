@@ -1,7 +1,8 @@
-from werkzeug.security import check_password_hash, generate_password_hash
 from flask_sqlalchemy import SQLAlchemy
+from resources.errors import (EmailAlreadyExists, MissingRequiredArgument, NegativePrice,
+                              PasswordTooShort, UpdateError, UsernameAlreadyExists)
 from sqlalchemy.sql import func
-from resources.errors import EmailAlreadyExists, PasswordTooShort, SchemaValidationError, UsernameAlreadyExists
+from werkzeug.security import check_password_hash, generate_password_hash
 
 db = SQLAlchemy()
 
@@ -14,6 +15,23 @@ class Spending(db.Model):
     instalments = db.Column(db.Integer, nullable=False, default=1)
     date = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now()) # Datetime from JS. Change the default when JS will implemented
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+    def __init__(self, description, price, category, date, instalments=1):
+        if description == "":
+            raise MissingRequiredArgument
+
+        if price < 0:
+            raise NegativePrice
+
+        if category == "":
+            raise MissingRequiredArgument
+
+        self.description = description
+        self.price = price
+        self.category = category
+        self.date = date
+        self.instalments = instalments
+
 
     def to_json(self):
         return {
@@ -42,20 +60,20 @@ class User(db.Model):
 
 
     # Create exceptions for missing arguments
+    # We must find a way to tell the user wich fields are missing
     def __init__(self, username, email, password):
         if User.query.filter_by(username=username).count() != 0:
             raise UsernameAlreadyExists
 
-        self.username = username
-
         if User.query.filter_by(email=email).count() != 0:
             raise EmailAlreadyExists
 
-        self.email = email
-
-        if len(password) < 8:
+        if not self.is_valid_password(password):
             raise PasswordTooShort
+
             
+        self.username = username
+        self.email = email
         self.password = password
         self.hash_password()
 
@@ -72,11 +90,19 @@ class User(db.Model):
     def update(self, data):
         for key, value in data.items():
             if hasattr(self, key):
+                if key == 'password' and not self.is_valid_password(value):
+                    raise UpdateError
+
                 setattr(self, key, value)
+            else:
+                raise UpdateError
             
             if key == 'password':
                 self.hash_password()
 
+
+    def is_valid_password(self, password):
+        return len(password) > 8
 
 
     def hash_password(self):

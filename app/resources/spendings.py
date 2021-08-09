@@ -1,83 +1,131 @@
-from flask import request, jsonify, Response, make_response
+from database.models import Spending, db
+from flask import Response, jsonify, make_response, request
+from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_restful import Resource
-from database.models import db, Spending
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from werkzeug.exceptions import HTTPException, NotFound
+
+from .errors import InvalidCredentials, MissingRequiredArgument, ServerError
+
 
 class SpendingApi(Resource):
     @jwt_required()
     def get(self, user_id, spending_id):
-        token_id = get_jwt_identity()
-        if user_id != token_id: 
-            return make_response({'msg': 'invalid credentials'}, 401)
+        try:
+            token_id = get_jwt_identity()
 
-        spending = Spending.query.filter_by(id = spending_id, user_id=user_id).one_or_none()
+            if user_id != token_id: 
+                raise InvalidCredentials
 
-        return make_response(jsonify(spending.to_json()), 200)
+            spending = Spending.query.filter_by(id = spending_id, user_id=user_id).one_or_none()
+
+            if spending is None:
+                raise NotFound
+
+            return make_response(jsonify(spending.to_json()), 200)
+
+        except HTTPException as e:
+            raise e
+        except:
+            raise ServerError
 
     # Update spending
     @jwt_required()
     def put(self, user_id, spending_id):
-        body = request.get_json()
+        try:
+            body = request.get_json()
 
-        token_id = get_jwt_identity()
-        if user_id != token_id: 
-            return make_response({'msg': 'invalid credentials'}, 401)
+            token_id = get_jwt_identity()
+            
+            if user_id != token_id: 
+                raise InvalidCredentials
 
-        spending = Spending.query.filter_by(id=spending_id, user_id=user_id).one_or_none()
+            spending = Spending.query.filter_by(id=spending_id, user_id=user_id).one_or_none()
 
-        spending.update(body)
+            if spending is None:
+                raise NotFound
 
-        db.session.add(spending)
-        db.session.commit()
+            spending.update(body)
 
-        return 'success', 204
+            db.session.add(spending)
+            db.session.commit()
+
+            return 'success', 204
+
+        except HTTPException as e:
+            raise e
+        except:
+            raise ServerError
 
 
     # Delete spending
     @jwt_required()
     def delete(self, user_id, spending_id):
-        token_id = get_jwt_identity()
-        if user_id != token_id: 
-            return make_response({'msg': 'invalid credentials'}, 401)
+        try:
+            token_id = get_jwt_identity()
+            
+            if user_id != token_id: 
+                raise InvalidCredentials
 
-        spending = Spending.query.filter_by(id=spending_id, user_id=user_id).one_or_none()
+            spending = Spending.query.filter_by(id=spending_id, user_id=user_id).one_or_none()
 
-        db.session.delete(spending)
-        db.session.commit()
+            if spending is None:
+                raise NotFound
 
-        return 'success', 204
+            db.session.delete(spending)
+            db.session.commit()
+
+            return 'success', 204
+
+        except HTTPException as e:
+            raise e
+        except:
+            raise ServerError
 
 
 class SpendingsApi(Resource):
     # Retrive all spendings from user
     @jwt_required()
     def get(self, user_id):
-        token_id = get_jwt_identity()
+        try:
+            token_id = get_jwt_identity()
 
-        if user_id != token_id: 
-            return make_response({'msg': 'invalid credentials'}, 401)
+            if user_id != token_id: 
+                raise InvalidCredentials
 
-        spendings = Spending.query.filter_by(user_id=user_id)
-        response = []
+            spendings = Spending.query.filter_by(user_id=user_id)
+            response = []
 
-        for spending in spendings:
-            response.append(spending.to_json())
+            for spending in spendings:
+                response.append(spending.to_json())
 
-        return make_response(jsonify(response), 200)
+            return make_response(jsonify(response), 200)
+
+        except HTTPException as e: 
+            raise e
+        except:
+            raise ServerError
     
     # Add spending
     @jwt_required()
     def post(self, user_id):
-        body = request.get_json()
-        token_id = get_jwt_identity()
+        try:
+            body = request.get_json()
+            token_id = get_jwt_identity()
 
-        if user_id != token_id: 
-            return make_response({'msg': 'invalid credentials'}, 401)
+            if user_id != token_id: 
+                raise InvalidCredentials
 
-        spending = Spending(**body)
-        spending.user_id = user_id
+            spending = Spending(**body)
+            spending.user_id = user_id
 
-        db.session.add(spending)
-        db.session.commit()
+            db.session.add(spending)
+            db.session.commit()
 
-        return {'id': spending.id}, 200
+            return {'id': spending.id}, 200
+
+        except HTTPException as e:
+            raise e
+        except TypeError:
+            raise MissingRequiredArgument
+        except:
+            raise ServerError

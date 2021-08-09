@@ -1,9 +1,10 @@
 from flask import Flask, jsonify, request
-from database.models import db, User, Spending, initialize_database
-from flask_restful import Api
-from resources.routes import initialize_routes
 from flask_jwt_extended import JWTManager
+from flask_restful import Api
+
+from database.models import Spending, User, db, initialize_database
 from resources.errors import errors
+from resources.routes import initialize_routes
 
 app = Flask(__name__)
 
